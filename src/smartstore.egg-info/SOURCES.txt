@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+src/smartstore/__init__.py
+src/smartstore/main.py
+src/smartstore.egg-info/PKG-INFO
+src/smartstore.egg-info/SOURCES.txt
+src/smartstore.egg-info/dependency_links.txt
+src/smartstore.egg-info/requires.txt
+src/smartstore.egg-info/top_level.txt
+src/smartstore/ingestion/__init__.py
+src/smartstore/ingestion/profiler.py
+tests/test_main.py
