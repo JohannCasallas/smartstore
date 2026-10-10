@@ -1,4 +1,5 @@
-﻿from smartstore.main import main
+
+from smartstore.main import main
 
 
 def test_main_prints_startup_message(capsys) -> None:
