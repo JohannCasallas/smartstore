@@ -1,10 +1,12 @@
+from smartstore.cli import main
 
-from smartstore.main import main
 
+def test_cli_profile_on_empty_raw(tmp_path, monkeypatch) -> None:
+    data_dir = tmp_path / "raw"
+    data_dir.mkdir()
+    out_dir = tmp_path / "reports"
 
-def test_main_prints_startup_message(capsys) -> None:
-    main()
+    code = main(["profile", "--data-dir", str(data_dir), "--output-dir", str(out_dir)])
 
-    captured = capsys.readouterr()
-
-    assert captured.out.strip() == "SmartStore: entorno inicial listo."
+    assert code == 2
+    assert list(out_dir.glob("data_profile_*.md"))

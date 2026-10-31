@@ -1,7 +1,10 @@
-def main() -> None:
-    """Punto de entrada de la aplicación SmartStore."""
-    print("SmartStore: entorno inicial listo.")
+from smartstore.cli import main
+
+
+def run() -> None:
+    """Punto de entrada legacy; preferir `python -m smartstore.cli`."""
+    raise SystemExit(main())
 
 
 if __name__ == "__main__":
-    main()
+    run()

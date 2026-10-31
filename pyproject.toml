@@ -1,14 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "smartstore"
 version = "0.1.0"
 description = "Plataforma de analitica comercial y pronostico de demanda."
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "pandas",
-    "numpy",
-    "matplotlib",
-    "seaborn",
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "matplotlib>=3.9",
+    "seaborn>=0.13",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+smartstore = "smartstore.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
