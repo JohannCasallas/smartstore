@@ -113,3 +113,79 @@ def write_profile_report(
     json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     md_path.write_text(build_markdown_report(payload), encoding="utf-8")
     return json_path, md_path
+
+
+def build_quality_markdown(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    sale = payload.get("sale_definition") or {}
+    lines: list[str] = [
+        "# Informe de calidad de datos",
+        "",
+        f"- **Generado:** {payload['generated_at']}",
+        f"- **Directorio analizado:** `{payload['data_directory']}`",
+        f"- **Resultado:** {'PASS' if summary['passed'] else 'FAIL'}",
+        f"- **Chequeos fallidos:** {summary['checks_failed']} | "
+        f"**avisos:** {summary['checks_warned']}",
+        "",
+        "## Definición de venta (ADR 0002)",
+        "",
+        f"- **Estados válidos:** {', '.join(f'`{s}`' for s in sale.get('valid_statuses', []))}",
+        f"- **Fecha de demanda:** `{sale.get('demand_timestamp', '')}`",
+        f"- **Montos de línea:** "
+        f"{', '.join(f'`{c}`' for c in sale.get('line_amount_columns', []))}",
+        f"- **Documento:** `{sale.get('adr', '')}`",
+        "",
+    ]
+
+    missing = summary.get("missing_expected_files") or []
+    if missing:
+        lines.extend(["## Archivos esperados no encontrados", ""])
+        for name in missing:
+            lines.append(f"- `{name}`")
+        lines.append("")
+
+    status_counts = payload.get("order_status_counts") or {}
+    if status_counts:
+        lines.extend(["## Distribución de `order_status`", ""])
+        for status, count in sorted(status_counts.items(), key=lambda x: -x[1]):
+            marker = "venta" if status in set(sale.get("valid_statuses") or []) else "excluido"
+            lines.append(f"- `{status}`: {count:,} ({marker})")
+        lines.append("")
+
+    lines.extend(["## Chequeos", ""])
+    for check in payload.get("checks") or []:
+        if check["passed"]:
+            mark = "OK"
+        elif check["severity"] == "warning":
+            mark = "AVISO"
+        else:
+            mark = "ERROR"
+        lines.append(f"- **{mark}** `{check['id']}` — {check['message']}")
+    lines.append("")
+    lines.extend(
+        [
+            "## Próximos pasos",
+            "",
+            "1. `smartstore build` si aún no existe `data/processed/order_items_enriched.csv`.",
+            "2. `smartstore analyze` — KPIs y demanda semanal sobre ventas válidas.",
+            "3. Fase 4: pronóstico a partir de la serie semanal del informe comercial.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def write_quality_report(
+    payload: dict[str, Any],
+    output_dir: Path,
+    *,
+    prefix: str = "data_quality",
+) -> tuple[Path, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
+    json_path = output_dir / f"{prefix}_{stamp}.json"
+    md_path = output_dir / f"{prefix}_{stamp}.md"
+
+    json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    md_path.write_text(build_quality_markdown(payload), encoding="utf-8")
+    return json_path, md_path

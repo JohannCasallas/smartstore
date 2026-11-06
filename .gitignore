@@ -21,6 +21,8 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 docs/reports/data_profile_*
+docs/reports/data_quality_*
+docs/reports/analytics_*
 !docs/reports/.gitkeep
 Thumbs.db
 .DS_Store
