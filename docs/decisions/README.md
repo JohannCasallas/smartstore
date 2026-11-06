@@ -14,3 +14,4 @@ Formato sugerido para cada archivo `NNNN-titulo-corto.md`:
 | [0001](0001-estructura-src-layout.md) | Layout `src/` y CLI | aceptado |
 | [0002](0002-definicion-de-venta.md) | Definición de venta y `order_status` | aceptado |
 | [0003](0003-kpis-comerciales.md) | KPIs comerciales y demanda semanal | aceptado |
+| [0004](0004-pronostico-de-demanda.md) | Pronóstico semanal de ítems | aceptado |

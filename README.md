@@ -20,7 +20,7 @@ python -m pip install -U pip
 pip install -e ".[dev]"
 ```
 
-## Uso — Fases 1 a 3
+## Uso — Fases 1 a 4
 
 1. Coloca los CSV de Olist en `data/raw/` (sin modificar originales).
 2. Perfila, valida, construye la tabla analítica y calcula KPIs:
@@ -30,6 +30,7 @@ smartstore profile
 smartstore validate
 smartstore build
 smartstore analyze
+smartstore forecast
 ```
 
 - `profile` / `validate` / `analyze` escriben JSON + Markdown en `docs/reports/`.
@@ -37,6 +38,8 @@ smartstore analyze
   `is_valid_sale` según [ADR 0002](docs/decisions/0002-definicion-de-venta.md)).
 - `analyze` usa solo ventas válidas: ingreso = suma de `price`; flete aparte;
   demanda semanal ISO en el informe.
+- `forecast` pronostica ítems por semana. Compara tres reglas y se queda con
+  la de menor error ([ADR 0004](docs/decisions/0004-pronostico-de-demanda.md)).
 - Código de salida `2` si faltan archivos Olist, hay chequeos de calidad fallidos
   o no existe la tabla analítica.
 
@@ -59,7 +62,7 @@ smartstore/
 │   ├── common/              # Rutas y catálogo Olist
 │   ├── ingestion/           # Perfilado, validación y tabla analítica
 │   ├── analytics/           # KPIs y demanda semanal (Fase 3)
-│   ├── forecasting/         # (Fase 4)
+│   ├── forecasting/         # Pronóstico semanal de ítems (Fase 4)
 │   └── inventory/           # (Fase 5)
 └── tests/
 ```

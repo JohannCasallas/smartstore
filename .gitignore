@@ -23,6 +23,7 @@ data/processed/*
 docs/reports/data_profile_*
 docs/reports/data_quality_*
 docs/reports/analytics_*
+docs/reports/forecast_*
 !docs/reports/.gitkeep
 Thumbs.db
 .DS_Store

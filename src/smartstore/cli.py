@@ -12,6 +12,9 @@ from smartstore.analytics.metrics import (
 )
 from smartstore.analytics.report import write_analytics_report
 from smartstore.common.config import get_paths
+from smartstore.forecasting.baseline import select_baseline
+from smartstore.forecasting.report import build_forecast_frame, write_forecast_report
+from smartstore.forecasting.series import ForecastError, weekly_item_demand
 from smartstore.ingestion.profiler import profile_dataset_directory, write_profile_report
 from smartstore.ingestion.transform import (
     ENRICHED_FILENAME,
@@ -67,6 +70,35 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=15,
         help="Cuántos vendedores incluir, ordenados por ingreso.",
+    )
+
+    forecast = sub.add_parser(
+        "forecast",
+        help="Pronostica ítems vendidos por semana y compara tres modelos simples.",
+    )
+    forecast.add_argument(
+        "--input",
+        type=Path,
+        default=None,
+        help=f"CSV analítico (por defecto: data/processed/{ENRICHED_FILENAME}).",
+    )
+    forecast.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Carpeta de informes (por defecto: docs/reports).",
+    )
+    forecast.add_argument(
+        "--series-dir",
+        type=Path,
+        default=None,
+        help="Carpeta de las series CSV (por defecto: data/processed).",
+    )
+    forecast.add_argument(
+        "--horizon",
+        type=int,
+        default=8,
+        help="Semanas a pronosticar.",
     )
     return parser
 
@@ -178,6 +210,59 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"  JSON: {json_path}")
         print(f"  Markdown: {md_path}")
+        return 0
+
+    if args.command == "forecast":
+        source = args.input or (paths.data_processed / ENRICHED_FILENAME)
+        output_dir = args.output_dir or paths.docs_reports
+        series_dir = args.series_dir or paths.data_processed
+        try:
+            frame = load_enriched_table(source)
+            history = weekly_item_demand(frame)
+        except (EnrichedTableError, ForecastError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
+        if args.horizon < 1:
+            print("Error: --horizon debe ser al menos 1.", file=sys.stderr)
+            return 2
+        result = select_baseline(history["items"].astype(float).tolist(), horizon=args.horizon)
+        forecast = build_forecast_frame(history["week_start"].iloc[-1], result["future_items"])
+        payload = {
+            "generated_at": datetime.now(tz=UTC).isoformat(),
+            "source": str(source),
+            "horizon": args.horizon,
+            "demand": "items_per_iso_week",
+            "chosen_model": result["chosen_model"],
+            "chosen_label": result["chosen_label"],
+            "holdout_weeks": result["holdout_weeks"],
+            "evaluations": result["evaluations"],
+            "forecast": [
+                {
+                    "purchase_year": int(row.purchase_year),
+                    "purchase_week": int(row.purchase_week),
+                    "items": float(row.items),
+                }
+                for row in forecast.itertuples(index=False)
+            ],
+        }
+        series_dir.mkdir(parents=True, exist_ok=True)
+        history_path = series_dir / "weekly_item_demand.csv"
+        forecast_path = series_dir / "item_demand_forecast.csv"
+        history.to_csv(history_path, index=False)
+        forecast.to_csv(forecast_path, index=False)
+        json_path, md_path, chart_path = write_forecast_report(
+            payload, output_dir, history, forecast
+        )
+        print(
+            "Pronóstico: "
+            f"{result['chosen_label']} "
+            f"({args.horizon} semanas)."
+        )
+        print(f"  Histórico: {history_path}")
+        print(f"  Pronóstico: {forecast_path}")
+        print(f"  JSON: {json_path}")
+        print(f"  Markdown: {md_path}")
+        print(f"  Gráfico: {chart_path}")
         return 0
 
     return 1

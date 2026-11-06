@@ -17,6 +17,7 @@ smartstore profile
 smartstore validate
 smartstore build
 smartstore analyze
+smartstore forecast
 ```
 
 4. Revisa el informe más reciente en `docs/reports/` y la tabla en `data/processed/`.
